@@ -109,7 +109,7 @@ async function start(removeLinesCount) {
             clearPreviousOut(removeLinesCount + 1)
         }
         console.table(nodes)
-        console.log(`Online validators: ${validatorsOnline}/${consensusParticipants}; online nodes : ${synced}/${nodes.length}`)
+        console.log(`Current block: ${maxBlock}; online validators: ${validatorsOnline}/${consensusParticipants}; online nodes : ${synced}/${nodes.length}`)
         state = nodes
     }
 
