@@ -94,11 +94,13 @@ async function start(removeLinesCount) {
     const maxHeightValidators = (await (await getConsensusPublicKeys(nodeIps[maxBlockNodeId])).json())[0].result
     const consensusParticipants = maxHeightValidators.length
     let validatorsOnline = 0
+    let synced = 0
 
     nodes = nodes.map(x => {
         x.validatorAtMaxHeight = maxHeightValidators.includes(x.publicKey) ? true : '-'
         delete x['publicKey']
         if (x.address && x.validatorAtMaxHeight === true) validatorsOnline++
+        if (maxBlock - x.block <= 100) synced ++
         return x
     })
 
@@ -107,7 +109,7 @@ async function start(removeLinesCount) {
             clearPreviousOut(removeLinesCount + 1)
         }
         console.table(nodes)
-        console.log(`Online validators: ${validatorsOnline}/${consensusParticipants}`)
+        console.log(`Online validators: ${validatorsOnline}/${consensusParticipants}; online nodes : ${synced}/${nodes.length}`)
         state = nodes
     }
 
