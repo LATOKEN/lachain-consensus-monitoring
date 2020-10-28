@@ -56,39 +56,40 @@ const columns = {
 }
 
 async function start(removeLinesCount) {
+  let nodes = []
+  try {
     const { getPeers, getConsensusPublicKeys } = requester()
     let promises = nodeIps.map(x => getPeers(x))
     promises = await Promise.all(promises.map(x => x.catch(e => e)))
-    promises = promises.map(x => x['json'] ? x.json() : {})
+    promises = promises.map(x => x && x['json'] ? x.json() : {})
     const results = await Promise.all(promises)
-    let nodes = []
 
     let maxBlock = 0
     let maxBlockNodeId
 
     results.forEach((res, i) => {
-        const node = {
-            ip: nodeIps[i],
-            connections: res[0] ? res[0].result.length : 'X',
-            status: res[1] ? res[1].result.state : 'X',
-            // pubKeys: res.result.map(x => x.publicKey),
+      const node = {
+        ip: nodeIps[i],
+        connections: res && res[0] && res[1].result ? res[0].result.length : 'X',
+        status: res && res[1] && res[1].result ? res[1].result.state : 'X',
+        // pubKeys: res.result.map(x => x.publicKey),
+      }
+      if (res && res[0] && res[0].result && res[1] && res[1].result) {
+        node[columns.connections] = res[0].result.length
+        node[columns.status] = res[1].result.state
+        node[columns.address] = res[1].result.address
+        node.publicKey = res[1].result.publicKey
+        node[columns.block] = Number(res[2].result)
+        if (node[columns.block] > maxBlock) {
+          maxBlock = node[columns.block]
+          maxBlockNodeId = i
         }
-        if (res[0]) {
-            node[columns.connections] = res[0].result.length
-            node[columns.status] = res[1].result.state
-            node[columns.address] = res[1].result.address
-            node.publicKey = res[1].result.publicKey
-            node[columns.block] = Number(res[2].result)
-            if (node[columns.block] > maxBlock) {
-                maxBlock = node[columns.block]
-                maxBlockNodeId = i
-            }
-        } else {
-            Object.values(columns).forEach(x => {
-               node[x] = 'X'
-            })
-        }
-        nodes.push(node)
+      } else {
+        Object.values(columns).forEach(x => {
+          node[x] = 'X'
+        })
+      }
+      nodes.push(node)
     })
 
     const maxHeightValidators = (await (await getConsensusPublicKeys(nodeIps[maxBlockNodeId])).json())[0].result
@@ -112,10 +113,13 @@ async function start(removeLinesCount) {
         console.log(`Current block: ${maxBlock}; online validators: ${validatorsOnline}/${consensusParticipants}; online nodes : ${synced}/${nodes.length}`)
         state = nodes
     }
-
+  } catch (e) {
+    console.error(e);
+  } finally {
     setTimeout(() => {
         start(nodes.length + 4)
     }, 2000)
+  }
 }
 
 function clearPreviousOut(linesToRemove) {
@@ -150,7 +154,7 @@ function requester() {
                 }
             ]
 
-            return r(nodeUrl, data)
+            return r(nodeUrl, data).catch(e => undefined)
         },
         getConsensusPublicKeys: async function(nodeUrl) {
             const request = [
@@ -162,7 +166,7 @@ function requester() {
                 }
             ]
 
-            return r(nodeUrl, request)
+            return r(nodeUrl, request).catch(e => undefined)
         },
     }
 }
