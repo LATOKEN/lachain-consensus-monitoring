@@ -92,7 +92,12 @@ async function start(removeLinesCount) {
       nodes.push(node)
     })
 
-    const maxHeightValidators = (await (await getConsensusPublicKeys(nodeIps[maxBlockNodeId])).json())[0].result
+    let maxHeightValidators;
+    try {
+      maxHeightValidators = (await (await getConsensusPublicKeys(nodeIps[maxBlockNodeId])).json())[0].result
+    } catch (e) {
+      maxHeightValidators = []
+    }
     const consensusParticipants = maxHeightValidators.length
     let validatorsOnline = 0
     let synced = 0
