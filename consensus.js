@@ -53,6 +53,7 @@ const columns = {
     status: 'status',
     block: 'block',
     address: 'address',
+    txes: 'pool',
 }
 
 async function start(removeLinesCount) {
@@ -83,6 +84,9 @@ async function start(removeLinesCount) {
         if (node[columns.block] > maxBlock) {
           maxBlock = node[columns.block]
           maxBlockNodeId = i
+        }
+        if (res && res[3] && res[3].result) {
+            node[columns.txes] = res[3].result.length
         }
       } else {
         Object.values(columns).forEach(x => {
@@ -154,6 +158,11 @@ function requester() {
                 }, {
                     jsonrpc: "2.0",
                     method: "eth_blockNumber",
+                    params: [],
+                    id: requestId++
+                }, {
+                    jsonrpc: "2.0",
+                    method: "getTransactionPool",
                     params: [],
                     id: requestId++
                 }
